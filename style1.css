@@ -1,0 +1,19 @@
+/* Basic styling for the proposal container */
+#proposal_content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Container for the buttons (essential for runaway logic) */
+.container-button {
+    /* Set a specific height and width so the button has room to move */
+    width: 80%; /* e.g., 80% of the screen */
+    height: 300px; /* Adjust as needed */
+    margin: 50px auto;
+    /* This next line is CRUCIAL for the 'absolute' positioning in the JS */
+    position: relative; 
+    /* Ensures the buttons start centered */
+    text-align: center;
+}

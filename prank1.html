@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propsal funny</title>
+    <link rel="stylesheet" href="style1.css"> 
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+
+    <div id="proposal_content" class="text-center mt-5">
+        <img id="img" src="Wake Up X GIF.gif" alt="A proposal image" class="img-fluid"> 
+        <h1 id="proposal_text" class="display-4 mt-3">Will you marry me? 💍💖</h1>
+    </div>
+
+    <div class="container-button" style="position: relative; text-align: center; margin-top: 50px;">
+        <button class="btn btn-primary btn-lg mx-3" id="btn_yes">Yes forever! 🥰</button>
+        <button class="btn btn-danger btn-lg mx-3" id="btn_no">No, sorry! 😭</button>
+    </div>
+
+</body>
+</html>
+<script>
+    // Get the buttons and the text element
+    const btnYes = document.getElementById('btn_yes');
+    const btnNo = document.getElementById('btn_no');
+    const proposalText = document.getElementById('proposal_text');
+    const proposalImg = document.getElementById('img');
+
+    // --- YES BUTTON LOGIC ---
+    btnYes.addEventListener('click', () => {
+        // 1. Update the proposal text
+        proposalText.innerText = 'I’m so happy! 💕 You\'ve made my dreams come true!';
+        
+        // 2. Change the image source
+        // NOTE: Make sure the path '../img/p1.gif' is correct
+        proposalImg.src = 'Friends Love GIF.gif';
+        
+        // Optional: Hide the "No" button after acceptance
+        btnNo.style.display = 'none';
+
+        // Optional: Center the "Yes" button if it was moved
+        btnYes.style.position = 'static'; 
+    });
+
+    // --- NO BUTTON (RUNAWAY) LOGIC ---
+    btnNo.addEventListener('mousemove', () => {
+        // Get the dimensions of the button's parent container
+        const container = btnNo.parentElement;
+        const containerWidth = container.offsetWidth;
+        const containerHeight = container.offsetHeight;
+        
+        // Calculate a new random position within the container bounds
+        // We subtract the button's size (e.g., 100px) to prevent it from going off-screen
+        const randomX = Math.floor(Math.random() * (containerWidth - 100)); // Adjust 100 based on button width
+        const randomY = Math.floor(Math.random() * (containerHeight - 50)); // Adjust 50 based on button height
+
+        // Set the button's style
+        btnNo.style.position = 'absolute';
+        btnNo.style.left = `${randomX}px`;
+        btnNo.style.top = `${randomY}px`;
+    });
+</script>
